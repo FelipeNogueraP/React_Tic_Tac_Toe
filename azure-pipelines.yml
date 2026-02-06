@@ -1,21 +1,31 @@
-# Node.js with React
-# Build a Node.js project that uses React.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+# React build pipeline
+# Default is self-hosted because some Azure DevOps orgs have no Microsoft-hosted parallelism.
+# Set `useMicrosoftHosted` to `true` once your hosted parallelism grant is approved.
 
 trigger:
 - main
 
+parameters:
+- name: useMicrosoftHosted
+  type: boolean
+  default: false
+
+variables:
+  nodeVersion: '20.x'
+
 pool:
-  vmImage: ubuntu-latest
+  ${{ if eq(parameters.useMicrosoftHosted, true) }}:
+    vmImage: 'ubuntu-latest'
+  ${{ else }}:
+    name: 'Default'
 
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+    versionSpec: $(nodeVersion)
+  displayName: Install Node.js
 
 - script: |
-    npm install
+    npm ci
     npm run build
-  displayName: 'npm install and build'
+  displayName: Install dependencies and build
