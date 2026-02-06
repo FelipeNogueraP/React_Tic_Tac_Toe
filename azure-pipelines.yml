@@ -1,23 +1,14 @@
-# React build pipeline
-# Default is self-hosted because some Azure DevOps orgs have no Microsoft-hosted parallelism.
-# Set `useMicrosoftHosted` to `true` once your hosted parallelism grant is approved.
+# React build pipeline (self-hosted agent)
+# For Microsoft-hosted, replace pool with: vmImage: 'ubuntu-latest'
 
 trigger:
 - main
-
-parameters:
-- name: useMicrosoftHosted
-  type: boolean
-  default: false
 
 variables:
   nodeVersion: '20.x'
 
 pool:
-  ${{ if eq(parameters.useMicrosoftHosted, true) }}:
-    vmImage: 'ubuntu-latest'
-  ${{ else }}:
-    name: 'Default'
+  name: 'Default'
 
 steps:
 - task: NodeTool@0
