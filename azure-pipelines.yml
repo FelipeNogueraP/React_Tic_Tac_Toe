@@ -42,6 +42,9 @@ stages:
   - job: DeployToStorage
     displayName: Deploy to Azure Storage Static Website
     steps:
+    - checkout: none
+      displayName: Skip source checkout
+
     - download: current
       artifact: $(artifactName)
       displayName: Download build artifact
