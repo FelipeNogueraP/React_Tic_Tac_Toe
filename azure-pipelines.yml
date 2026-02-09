@@ -1,22 +1,70 @@
-# React build pipeline (self-hosted agent)
-# For Microsoft-hosted, replace pool with: vmImage: 'ubuntu-latest'
+# React CI/CD pipeline
+# Uses self-hosted agent pool "Default" by default.
 
 trigger:
 - main
 
 variables:
   nodeVersion: '20.x'
+  artifactName: 'react-build'
+  deployEnabled: 'true'
+  azureServiceConnection: 'azureServiceConnection'
+  storageAccountName: 'straccfortictactoe'
 
 pool:
   name: 'Default'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: $(nodeVersion)
-  displayName: Install Node.js
+stages:
+- stage: Build
+  displayName: Build React App
+  jobs:
+  - job: Build
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(nodeVersion)
+      displayName: Install Node.js
 
-- script: |
-    npm ci
-    npm run build
-  displayName: Install dependencies and build
+    - script: |
+        npm ci
+        npm run build
+      displayName: Install dependencies and build
+
+    - publish: build
+      artifact: $(artifactName)
+      displayName: Publish build artifact
+
+- stage: Deploy
+  displayName: Deploy Static Site
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['deployEnabled'], 'true'))
+  jobs:
+  - job: DeployToStorage
+    displayName: Deploy to Azure Storage Static Website
+    steps:
+    - download: current
+      artifact: $(artifactName)
+      displayName: Download build artifact
+
+    - task: AzureCLI@2
+      displayName: Upload files to $web container
+      inputs:
+        azureSubscription: $(azureServiceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          az storage blob upload-batch \
+            --account-name "$(storageAccountName)" \
+            --destination '$web' \
+            --source "$(Pipeline.Workspace)/$(artifactName)" \
+            --overwrite \
+            --auth-mode login
+
+          website_url="$(az storage account show \
+            --name "$(storageAccountName)" \
+            --query "primaryEndpoints.web" \
+            --output tsv)"
+
+          echo "Website URL: ${website_url}"
+          echo "##vso[task.setvariable variable=websiteUrl]${website_url}"

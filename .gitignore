@@ -160,3 +160,21 @@ cython_debug/
 #.idea/
 node_modules
 .vscode/*
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+*.tfvars.json
+.terraformrc
+terraform.rc
+!terraform/env/
+!terraform/env/*.example.tfvars
+tfplan
